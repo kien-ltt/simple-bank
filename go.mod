@@ -1,6 +1,6 @@
 module github.com/kien-ltt/simplebank
 
-go 1.21.6
+go 1.22.1
 
 require (
 	aidanwoods.dev/go-paseto v1.5.1
