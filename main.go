@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -19,6 +21,9 @@ import (
 
 	_ "github.com/lib/pq"
 )
+
+//go:embed doc/swagger
+var swaggerFS embed.FS
 
 func main() {
 	config, err := util.LoadConfig(".")
@@ -85,6 +90,13 @@ func runGatewayServer(config util.Config, store db.Store) {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", grpcMux)
+
+	swaggerSub, err := fs.Sub(swaggerFS, "doc")
+	if err != nil {
+		log.Fatal("cannot get swagger doc subtree:", err)
+	}
+
+	mux.Handle("/swagger/", http.FileServer(http.FS(swaggerSub)))
 
 	listener, err := net.Listen("tcp", config.HTTPServerAddress)
 	if err != nil {
