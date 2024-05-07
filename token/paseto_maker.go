@@ -24,8 +24,8 @@ func NewPasetoMaker(symmetricKey string) (Maker, error) {
 	return maker, nil
 }
 
-func (maker *PasetoMaker) CreateToken(username string, duration time.Duration) (string, *Payload, error) {
-	payload, err := NewPayload(username, duration)
+func (maker *PasetoMaker) CreateToken(username string, role string, duration time.Duration) (string, *Payload, error) {
+	payload, err := NewPayload(username, role, duration)
 	if err != nil {
 		return "", payload, err
 	}
@@ -35,6 +35,7 @@ func (maker *PasetoMaker) CreateToken(username string, duration time.Duration) (
 	token.Set("username", payload.Username)
 	token.SetIssuedAt(payload.IssuedAt)
 	token.SetExpiration(payload.ExpiresAt)
+	token.Set("role", payload.Role)
 
 	return token.V4Encrypt(maker.symmetricKey, nil), payload, nil
 }
@@ -62,6 +63,10 @@ func getPayloadFromPasetoToken(t *paseto.Token) (*Payload, error) {
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
+	role, err := t.GetString("role")
+	if err != nil {
+		return nil, ErrInvalidToken
+	}
 	issuedAt, err := t.GetIssuedAt()
 	if err != nil {
 		return nil, ErrInvalidToken
@@ -74,6 +79,7 @@ func getPayloadFromPasetoToken(t *paseto.Token) (*Payload, error) {
 	return &Payload{
 		ID:        uuid.MustParse(id),
 		Username:  username,
+		Role:      role,
 		IssuedAt:  issuedAt,
 		ExpiresAt: expiredAt,
 	}, nil
